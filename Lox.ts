@@ -1,5 +1,5 @@
 export class Lox {
-  private hadError = false;
+  static hadError = false;
 
   main(args: string[]) {
     if (args.length > 1) {
@@ -15,7 +15,7 @@ export class Lox {
   private runFile(path: string) {
     const source = Deno.readTextFileSync(path);
     this.run(source);
-    if (this.hadError) Deno.exit(65);
+    if (Lox.hadError) Deno.exit(65);
   }
 
   private runPrompt() {
@@ -23,7 +23,7 @@ export class Lox {
       const line = prompt("> ");
       if (line === null) break;
       this.run(line);
-      this.hadError = false;
+      Lox.hadError = false;
     }
   }
 
@@ -31,13 +31,13 @@ export class Lox {
     console.log(`Would interpret:\n${source}`);
   }
 
-  error(line: number, message: string) {
+  static error(line: number, message: string) {
     this.report(line, "", message);
   }
 
-  private report(line: number, where: string, message: string) {
+  private static report(line: number, where: string, message: string) {
     console.error(`[line ${line}] Error${where}: ${message}`);
-    this.hadError = true;
+    Lox.hadError = true;
   }
 }
 
