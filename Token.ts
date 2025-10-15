@@ -1,15 +1,17 @@
 import { TokenType } from "./TokenType.ts";
 
+export type LoxLiteral = string | number | null | boolean;
+
 export class Token {
   readonly type: TokenType;
   readonly lexeme: string;
-  readonly literal: Record<any, any>;
+  readonly literal: LoxLiteral;
   readonly line: number;
 
   constructor(
     type: TokenType,
     lexeme: string,
-    literal: Record<any, any>,
+    literal: LoxLiteral,
     line: number
   ) {
     this.type = type;
