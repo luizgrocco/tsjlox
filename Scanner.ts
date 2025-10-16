@@ -8,6 +8,24 @@ export class Scanner {
   private start = 0;
   private current = 0;
   private line = 1;
+  private static readonly keywords = new Map<string, TokenType>([
+    ["and", TokenType.AND],
+    ["class", TokenType.CLASS],
+    ["else", TokenType.ELSE],
+    ["false", TokenType.FALSE],
+    ["for", TokenType.FOR],
+    ["fun", TokenType.FUN],
+    ["if", TokenType.IF],
+    ["nil", TokenType.NIL],
+    ["or", TokenType.OR],
+    ["print", TokenType.PRINT],
+    ["return", TokenType.RETURN],
+    ["super", TokenType.SUPER],
+    ["this", TokenType.THIS],
+    ["true", TokenType.TRUE],
+    ["var", TokenType.VAR],
+    ["while", TokenType.WHILE],
+  ]);
 
   constructor(source: string) {
     this.source = source;
@@ -92,9 +110,39 @@ export class Scanner {
         this.string();
         break;
       default:
-        Lox.error(this.line, "Unexpected character.");
+        if (this.isDigit(c)) {
+          this.number();
+        } else if (this.isAlpha(c)) {
+          this.identifier();
+        } else {
+          Lox.error(this.line, "Unexpected character.");
+        }
         break;
     }
+  }
+
+  private identifier(): void {
+    while (this.isAlphaNumeric(this.peek())) this.advance();
+
+    const text = this.source.slice(this.start, this.current);
+    const type = Scanner.keywords.get(text) ?? TokenType.IDENTIFIER;
+    this.addToken(type);
+  }
+
+  private number(): void {
+    while (this.isDigit(this.peek())) this.advance();
+
+    if (this.peek() == "." && this.isDigit(this.peekNext())) {
+      // Consume the "."
+      this.advance();
+
+      while (this.isDigit(this.peek())) this.advance();
+    }
+
+    this.addToken(
+      TokenType.NUMBER,
+      parseFloat(this.source.slice(this.start, this.current))
+    );
   }
 
   private string(): void {
@@ -108,7 +156,7 @@ export class Scanner {
       return;
     }
 
-    // The closing ".
+    // Consume the closing ".
     this.advance();
 
     // Trim the surrounding quotes.
@@ -127,6 +175,23 @@ export class Scanner {
   private peek(): string {
     if (this.isAtEnd()) return "\0";
     return this.source.charAt(this.current);
+  }
+
+  private peekNext(): string {
+    if (this.current + 1 >= this.source.length) return "\0";
+    return this.source.charAt(this.current + 1);
+  }
+
+  private isAlpha(c: string): boolean {
+    return (c >= "a" && c <= "z") || (c >= "A" && c <= "Z") || c == "_";
+  }
+
+  private isAlphaNumeric(c: string): boolean {
+    return this.isAlpha(c) || this.isDigit(c);
+  }
+
+  private isDigit(c: string): boolean {
+    return c >= "0" && c <= "9";
   }
 
   private isAtEnd(): boolean {
