@@ -1,7 +1,7 @@
 {
   "tasks": {
-    "dev": "deno run --watch main.ts",
-    "repl": "deno run lox.ts"
+    "dev": "deno run --watch Lox.ts",
+    "repl": "deno run Lox.ts"
   },
   "imports": {}
 }
