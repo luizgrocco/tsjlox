@@ -1,3 +1,5 @@
+import { Scanner } from "./Scanner.ts";
+
 export class Lox {
   static hadError = false;
 
@@ -28,7 +30,10 @@ export class Lox {
   }
 
   private run(source: string) {
-    console.log(`Would interpret:\n${source}`);
+    const scanner = new Scanner(source);
+    const tokens = scanner.scanTokens();
+    // For now, just print the tokens.
+    console.log(tokens);
   }
 
   static error(line: number, message: string) {
