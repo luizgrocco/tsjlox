@@ -3,5 +3,11 @@
     "dev": "deno run --watch Lox.ts",
     "repl": "deno run Lox.ts"
   },
+  "lint": {
+    "rules": {
+      "tags": ["recommended"],
+      "include": ["no_unused_vars"]
+    }
+  },
   "imports": {}
 }
