@@ -12,7 +12,7 @@ export interface ExprVisitor<T> {
   // visitSuperExpr(expr: SuperExpr): T;
   // visitThisExpr(expr: ThisExpr): T;
   visitUnaryExpr(expr: Unary): T;
-  // visitVariableExpr(expr: Variable): T;
+  visitVariableExpr(expr: Variable): T;
 }
 
 export abstract class Expr {
@@ -129,12 +129,12 @@ export class Unary extends Expr {
   }
 }
 
-// export class Variable extends Expr {
-//   constructor(public name: Token) {
-//     super();
-//   }
+export class Variable extends Expr {
+  constructor(public name: Token) {
+    super();
+  }
 
-//   accept<T>(visitor: ExprVisitor<T>): T {
-//     return visitor.visitVariableExpr(this);
-//   }
-// }
+  accept<T>(visitor: ExprVisitor<T>): T {
+    return visitor.visitVariableExpr(this);
+  }
+}
