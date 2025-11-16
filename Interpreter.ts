@@ -1,10 +1,22 @@
-import { Binary, Expr, ExprVisitor, Grouping, Literal, Unary } from "./Expr.ts";
+import { Environment } from "./Environment.ts";
+import {
+  Binary,
+  Expr,
+  ExprVisitor,
+  Grouping,
+  Literal,
+  Unary,
+  Variable,
+} from "./Expr.ts";
 import { Lox } from "./Lox.ts";
 import { RuntimeError } from "./RuntimeError.ts";
+import { Expression, Print, Stmt, StmtVisitor, Var } from "./Stmt.ts";
 import { LoxValue, Token } from "./Token.ts";
 import { TokenType } from "./TokenType.ts";
 
-export class Interpreter implements ExprVisitor<LoxValue> {
+export class Interpreter implements ExprVisitor<LoxValue>, StmtVisitor<void> {
+  private environment: Environment = new Environment();
+
   constructor() {}
 
   public visitLiteralExpr(expr: Literal) {
@@ -28,6 +40,10 @@ export class Interpreter implements ExprVisitor<LoxValue> {
 
     // Unreachable.
     return null;
+  }
+
+  public visitVariableExpr(expr: Variable): LoxValue {
+    return this.environment.get(expr.name);
   }
 
   private checkNumberOperand(
@@ -56,6 +72,26 @@ export class Interpreter implements ExprVisitor<LoxValue> {
 
   private evaluate(expr: Expr): LoxValue {
     return expr.accept(this);
+  }
+
+  private execute(stmt: Stmt): void {
+    stmt.accept(this);
+  }
+
+  public visitExpressionStmt(stmt: Expression): void {
+    this.evaluate(stmt.expression);
+  }
+
+  public visitPrintStmt(stmt: Print): void {
+    const value = this.evaluate(stmt.expression);
+    console.log(this.stringify(value));
+  }
+
+  public visitVarStmt(stmt: Var): void {
+    const value: LoxValue =
+      stmt.initializer !== null ? this.evaluate(stmt.initializer) : null;
+
+    this.environment.define(stmt.name.lexeme, value);
   }
 
   public visitBinaryExpr(expr: Binary): LoxValue {
@@ -114,13 +150,17 @@ export class Interpreter implements ExprVisitor<LoxValue> {
     return null;
   }
 
-  interpret(expression: Expr): void {
+  interpret(statements: Stmt[]): void {
     try {
-      const value = this.evaluate(expression);
-      console.log(this.stringify(value));
+      for (const statement of statements) {
+        this.execute(statement);
+      }
     } catch (error) {
       if (error instanceof RuntimeError) {
         Lox.runtimeError(error);
+      } else {
+        // Rethrow any error that isn't one of our own so we can identify bugs in the interpreter itself.
+        throw error;
       }
     }
   }
