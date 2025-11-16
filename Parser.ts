@@ -1,5 +1,6 @@
-import { Binary, Expr, Grouping, Literal, Unary } from "./Expr.ts";
+import { Binary, Expr, Grouping, Literal, Unary, Variable } from "./Expr.ts";
 import { Lox } from "./Lox.ts";
+import { Expression, Print, Stmt, Var } from "./Stmt.ts";
 import { Token } from "./Token.ts";
 import { TokenType } from "./TokenType.ts";
 
@@ -13,18 +14,61 @@ export class Parser {
     this.tokens = tokens;
   }
 
-  parse(): Expr | null {
-    try {
-      return this.expression();
-    } catch (error) {
-      if (error instanceof ParseError) return null;
+  parse(): Stmt[] {
+    const statements: Stmt[] = [];
 
-      throw error;
+    while (!this.isAtEnd()) {
+      const stmt = this.declaration();
+      if (stmt) statements.push(stmt);
     }
+
+    return statements;
   }
 
   private expression(): Expr {
     return this.equality();
+  }
+
+  private declaration(): Stmt | null {
+    try {
+      if (this.match(TokenType.VAR)) return this.varDeclaration();
+
+      return this.statement();
+    } catch (error) {
+      if (error instanceof ParseError) {
+        this.synchronize();
+        return null;
+      } else {
+        throw error;
+      }
+    }
+  }
+
+  private statement(): Stmt {
+    if (this.match(TokenType.PRINT)) return this.printStatement();
+
+    return this.expressionStatement();
+  }
+
+  private printStatement(): Stmt {
+    const value = this.expression();
+    this.consume(TokenType.SEMICOLON, "Expect ';' after value.");
+    return new Print(value);
+  }
+
+  private varDeclaration(): Stmt {
+    const name = this.consume(TokenType.IDENTIFIER, "Expect variable name.");
+
+    const initializer = this.match(TokenType.EQUAL) ? this.expression() : null;
+
+    this.consume(TokenType.SEMICOLON, "Expect ';' after variable declaration.");
+    return new Var(name, initializer);
+  }
+
+  private expressionStatement(): Stmt {
+    const expr = this.expression();
+    this.consume(TokenType.SEMICOLON, "Expect ';' after expression.");
+    return new Expression(expr);
   }
 
   private equality(): Expr {
@@ -99,6 +143,10 @@ export class Parser {
 
     if (this.match(TokenType.NUMBER, TokenType.STRING)) {
       return new Literal(this.previous().literal);
+    }
+
+    if (this.match(TokenType.IDENTIFIER)) {
+      return new Variable(this.previous());
     }
 
     if (this.match(TokenType.LEFT_PAREN)) {
