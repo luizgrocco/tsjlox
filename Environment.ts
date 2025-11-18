@@ -1,5 +1,6 @@
+import { LoxValue } from "./LoxTypes.ts";
 import { RuntimeError } from "./RuntimeError.ts";
-import { LoxValue, Token } from "./Token.ts";
+import { Token } from "./Token.ts";
 
 export class Environment {
   readonly enclosing?: Environment;

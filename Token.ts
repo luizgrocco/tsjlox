@@ -1,8 +1,5 @@
+import { LoxLiteral } from "./LoxTypes.ts";
 import { TokenType } from "./TokenType.ts";
-
-export type LoxLiteral = string | number | null | boolean;
-
-export type LoxValue = LoxLiteral;
 
 export class Token {
   readonly type: TokenType;

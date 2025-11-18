@@ -1,5 +1,6 @@
 import { Lox } from "./Lox.ts";
-import { LoxLiteral, Token } from "./Token.ts";
+import { LoxLiteral } from "./LoxTypes.ts";
+import { Token } from "./Token.ts";
 import { TokenType } from "./TokenType.ts";
 
 export class Scanner {
