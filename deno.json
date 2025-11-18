@@ -2,7 +2,7 @@
   "tasks": {
     "dev": "deno run --watch Lox.ts",
     "repl": "deno run Lox.ts",
-    "test": "deno run -A Lox.ts test.lox"
+    "test": "deno run -A Lox.ts ztest.lox"
   },
   "lint": {
     "rules": {
