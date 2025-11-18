@@ -1,13 +1,13 @@
 import { LoxValue, Token } from "./Token.ts";
 
 export interface ExprVisitor<T> {
-  // visitAssignExpr(expr: Assign): T;
+  visitAssignExpr(expr: Assign): T;
   visitBinaryExpr(expr: Binary): T;
   // visitCallExpr(expr: Call): T;
   // visitGetExpr(expr: Get): T;
   visitGroupingExpr(expr: Grouping): T;
   visitLiteralExpr(expr: Literal): T;
-  // visitLogicalExpr(expr: Logical): T;
+  visitLogicalExpr(expr: Logical): T;
   // visitSetExpr(expr: SetExpr): T;
   // visitSuperExpr(expr: SuperExpr): T;
   // visitThisExpr(expr: ThisExpr): T;
@@ -19,18 +19,22 @@ export abstract class Expr {
   abstract accept<T>(visitor: ExprVisitor<T>): T;
 }
 
-// export class Assign extends Expr {
-//   constructor(public name: Token, public value: Expr) {
-//     super();
-//   }
+export class Assign extends Expr {
+  constructor(public readonly name: Token, public readonly value: Expr) {
+    super();
+  }
 
-//   accept<T>(visitor: ExprVisitor<T>): T {
-//     return visitor.visitAssignExpr(this);
-//   }
-// }
+  accept<T>(visitor: ExprVisitor<T>): T {
+    return visitor.visitAssignExpr(this);
+  }
+}
 
 export class Binary extends Expr {
-  constructor(public left: Expr, public operator: Token, public right: Expr) {
+  constructor(
+    public readonly left: Expr,
+    public readonly operator: Token,
+    public readonly right: Expr
+  ) {
     super();
   }
 
@@ -60,7 +64,7 @@ export class Binary extends Expr {
 // }
 
 export class Grouping extends Expr {
-  constructor(public expression: Expr) {
+  constructor(public readonly expression: Expr) {
     super();
   }
 
@@ -70,7 +74,7 @@ export class Grouping extends Expr {
 }
 
 export class Literal extends Expr {
-  constructor(public value: LoxValue) {
+  constructor(public readonly value: LoxValue) {
     super();
   }
 
@@ -79,15 +83,15 @@ export class Literal extends Expr {
   }
 }
 
-// export class Logical extends Expr {
-//   constructor(public left: Expr, public operator: Token, public right: Expr) {
-//     super();
-//   }
+export class Logical extends Expr {
+  constructor(public left: Expr, public operator: Token, public right: Expr) {
+    super();
+  }
 
-//   accept<T>(visitor: ExprVisitor<T>): T {
-//     return visitor.visitLogicalExpr(this);
-//   }
-// }
+  accept<T>(visitor: ExprVisitor<T>): T {
+    return visitor.visitLogicalExpr(this);
+  }
+}
 
 // export class SetExpr extends Expr {
 //   constructor(public object: Expr, public name: Token, public value: Expr) {
@@ -120,7 +124,7 @@ export class Literal extends Expr {
 // }
 
 export class Unary extends Expr {
-  constructor(public operator: Token, public right: Expr) {
+  constructor(public readonly operator: Token, public readonly right: Expr) {
     super();
   }
 
@@ -130,7 +134,7 @@ export class Unary extends Expr {
 }
 
 export class Variable extends Expr {
-  constructor(public name: Token) {
+  constructor(public readonly name: Token) {
     super();
   }
 

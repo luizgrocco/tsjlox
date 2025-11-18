@@ -2,33 +2,33 @@ import { Expr } from "./Expr.ts";
 import { Token } from "./Token.ts";
 
 export interface StmtVisitor<T> {
-  // visitBlockStmt(stmt: Block): T;
+  visitBlockStmt(stmt: Block): T;
   // visitClassStmt(stmt: Class): T;
   visitExpressionStmt(stmt: Expression): T;
   // visitFunctionStmt(stmt: Function): T;
-  // visitIfStmt(stmt: If): T;
+  visitIfStmt(stmt: If): T;
   visitPrintStmt(stmt: Print): T;
   // visitReturnStmt(stmt: Return): T;
   visitVarStmt(stmt: Var): T;
-  // visitWhileStmt(stmt: While): T;
+  visitWhileStmt(stmt: While): T;
 }
 
 export abstract class Stmt {
   abstract accept<T>(visitor: StmtVisitor<T>): T;
 }
 
-// export class Block extends Stmt {
-//   readonly statements: Stmt[];
+export class Block extends Stmt {
+  readonly statements: Stmt[];
 
-//   constructor(statements: Stmt[]) {
-//     super();
-//     this.statements = statements;
-//   }
+  constructor(statements: Stmt[]) {
+    super();
+    this.statements = statements;
+  }
 
-//   accept<T>(visitor: Visitor<T>): T {
-//     return visitor.visitBlockStmt(this);
-//   }
-// }
+  accept<T>(visitor: StmtVisitor<T>): T {
+    return visitor.visitBlockStmt(this);
+  }
+}
 
 export class Print extends Stmt {
   readonly expression: Expr;
@@ -68,5 +68,34 @@ export class Var extends Stmt {
 
   accept<T>(visitor: StmtVisitor<T>): T {
     return visitor.visitVarStmt(this);
+  }
+}
+
+export class If extends Stmt {
+  constructor(
+    public readonly condition: Expr,
+    public readonly thenBranch: Stmt,
+    public readonly elseBranch?: Stmt
+  ) {
+    super();
+    this.condition = condition;
+    this.thenBranch = thenBranch;
+    this.elseBranch = elseBranch;
+  }
+
+  accept<T>(visitor: StmtVisitor<T>): T {
+    return visitor.visitIfStmt(this);
+  }
+}
+
+export class While extends Stmt {
+  constructor(public readonly condition: Expr, public readonly body: Stmt) {
+    super();
+    this.condition = condition;
+    this.body = body;
+  }
+
+  accept<T>(visitor: StmtVisitor<T>): T {
+    return visitor.visitWhileStmt(this);
   }
 }

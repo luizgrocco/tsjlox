@@ -14,7 +14,7 @@ export class Lox {
     const lox = new Lox();
 
     if (args.length > 1) {
-      console.log("Usage: deno run lox.ts [script]");
+      console.log("Usage: deno run Lox.ts [script]");
       Deno.exit(64);
     } else if (args.length === 1) {
       lox.runFile(args[0]);
