@@ -2,6 +2,7 @@ import { Environment } from "./Environment.ts";
 import {
   Assign,
   Binary,
+  Call,
   Expr,
   ExprVisitor,
   Grouping,
@@ -11,10 +12,13 @@ import {
   Variable,
 } from "./Expr.ts";
 import { Lox } from "./Lox.ts";
+import { LoxFunction } from "./LoxFunction.ts";
+import { LoxCallable, LoxValue } from "./LoxTypes.ts";
 import { RuntimeError } from "./RuntimeError.ts";
 import {
   Block,
   Expression,
+  Function,
   If,
   Print,
   Stmt,
@@ -22,13 +26,31 @@ import {
   Var,
   While,
 } from "./Stmt.ts";
-import { LoxValue, Token } from "./Token.ts";
+import { Token } from "./Token.ts";
 import { TokenType } from "./TokenType.ts";
 
 export class Interpreter implements ExprVisitor<LoxValue>, StmtVisitor<void> {
-  private environment: Environment = new Environment();
+  readonly globals: Environment = new Environment();
+  private environment: Environment = this.globals;
 
-  constructor() {}
+  constructor() {
+    this.globals.define(
+      "clock",
+      new (class extends LoxCallable {
+        arity(): number {
+          return 0;
+        }
+
+        call(_interpreter: Interpreter, _args: LoxValue[]): LoxValue {
+          return Date.now() / 1000.0;
+        }
+
+        override toString(): string {
+          return "<native fn>";
+        }
+      })()
+    );
+  }
 
   public visitLiteralExpr(expr: Literal) {
     return expr.value;
@@ -123,6 +145,11 @@ export class Interpreter implements ExprVisitor<LoxValue>, StmtVisitor<void> {
     this.evaluate(stmt.expression);
   }
 
+  public visitFunctionStmt(stmt: Function): void {
+    const func = new LoxFunction(stmt);
+    this.environment.define(stmt.name.lexeme, func);
+  }
+
   public visitIfStmt(stmt: If): void {
     if (this.isTruthy(this.evaluate(stmt.condition))) {
       this.execute(stmt.thenBranch);
@@ -209,6 +236,35 @@ export class Interpreter implements ExprVisitor<LoxValue>, StmtVisitor<void> {
 
     // Unreachable.
     return null;
+  }
+
+  public visitCallExpr(expr: Call): LoxValue {
+    const callee = this.evaluate(expr.callee);
+
+    const args: LoxValue[] = [];
+    for (const arg of expr.args) {
+      args.push(this.evaluate(arg));
+    }
+
+    // console.dir(callee, { depth: null });
+
+    if (!(callee instanceof LoxCallable)) {
+      throw new RuntimeError(
+        expr.paren,
+        "Can only call functions and classes."
+      );
+    }
+
+    const func = callee;
+
+    if (args.length !== func.arity()) {
+      throw new RuntimeError(
+        expr.paren,
+        `Expected ${func.arity()} arguments but got ${args.length}.`
+      );
+    }
+
+    return func.call(this, args);
   }
 
   interpret(statements: Stmt[]): void {

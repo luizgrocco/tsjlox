@@ -5,7 +5,7 @@ export interface StmtVisitor<T> {
   visitBlockStmt(stmt: Block): T;
   // visitClassStmt(stmt: Class): T;
   visitExpressionStmt(stmt: Expression): T;
-  // visitFunctionStmt(stmt: Function): T;
+  visitFunctionStmt(stmt: Function): T;
   visitIfStmt(stmt: If): T;
   visitPrintStmt(stmt: Print): T;
   // visitReturnStmt(stmt: Return): T;
@@ -97,5 +97,22 @@ export class While extends Stmt {
 
   accept<T>(visitor: StmtVisitor<T>): T {
     return visitor.visitWhileStmt(this);
+  }
+}
+
+export class Function extends Stmt {
+  constructor(
+    public readonly name: Token,
+    public readonly params: Token[],
+    public readonly body: Stmt[]
+  ) {
+    super();
+    this.name = name;
+    this.params = params;
+    this.body = body;
+  }
+
+  accept<T>(visitor: StmtVisitor<T>): T {
+    return visitor.visitFunctionStmt(this);
   }
 }

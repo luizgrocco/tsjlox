@@ -1,9 +1,10 @@
-import { LoxValue, Token } from "./Token.ts";
+import { LoxValue } from "./LoxTypes.ts";
+import { Token } from "./Token.ts";
 
 export interface ExprVisitor<T> {
   visitAssignExpr(expr: Assign): T;
   visitBinaryExpr(expr: Binary): T;
-  // visitCallExpr(expr: Call): T;
+  visitCallExpr(expr: Call): T;
   // visitGetExpr(expr: Get): T;
   visitGroupingExpr(expr: Grouping): T;
   visitLiteralExpr(expr: Literal): T;
@@ -43,15 +44,15 @@ export class Binary extends Expr {
   }
 }
 
-// export class Call extends Expr {
-//   constructor(public callee: Expr, public paren: Token, public args: Expr[]) {
-//     super();
-//   }
+export class Call extends Expr {
+  constructor(public callee: Expr, public paren: Token, public args: Expr[]) {
+    super();
+  }
 
-//   accept<T>(visitor: ExprVisitor<T>): T {
-//     return visitor.visitCallExpr(this);
-//   }
-// }
+  accept<T>(visitor: ExprVisitor<T>): T {
+    return visitor.visitCallExpr(this);
+  }
+}
 
 // export class Get extends Expr {
 //   constructor(public object: Expr, public name: Token) {
