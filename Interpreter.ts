@@ -21,6 +21,7 @@ import {
   Function,
   If,
   Print,
+  Return,
   Stmt,
   StmtVisitor,
   Var,
@@ -28,6 +29,7 @@ import {
 } from "./Stmt.ts";
 import { Token } from "./Token.ts";
 import { TokenType } from "./TokenType.ts";
+import { ReturnThrow } from "./ReturnThrow.ts";
 
 export class Interpreter implements ExprVisitor<LoxValue>, StmtVisitor<void> {
   readonly globals: Environment = new Environment();
@@ -146,7 +148,7 @@ export class Interpreter implements ExprVisitor<LoxValue>, StmtVisitor<void> {
   }
 
   public visitFunctionStmt(stmt: Function): void {
-    const func = new LoxFunction(stmt);
+    const func = new LoxFunction(stmt, this.environment);
     this.environment.define(stmt.name.lexeme, func);
   }
 
@@ -161,6 +163,12 @@ export class Interpreter implements ExprVisitor<LoxValue>, StmtVisitor<void> {
   public visitPrintStmt(stmt: Print): void {
     const value = this.evaluate(stmt.expression);
     console.log(this.stringify(value));
+  }
+
+  public visitReturnStmt(stmt: Return): void {
+    const value = stmt.value !== null ? this.evaluate(stmt.value) : null;
+
+    throw new ReturnThrow(value);
   }
 
   public visitVarStmt(stmt: Var): void {
@@ -276,7 +284,7 @@ export class Interpreter implements ExprVisitor<LoxValue>, StmtVisitor<void> {
       if (error instanceof RuntimeError) {
         Lox.runtimeError(error);
       } else {
-        // Rethrow any error that isn't one of our own so we can identify bugs in the interpreter itself.
+        // Rethrow any errors that isn't one of our own so we can identify bugs in the interpreter itself.
         throw error;
       }
     }

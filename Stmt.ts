@@ -8,7 +8,7 @@ export interface StmtVisitor<T> {
   visitFunctionStmt(stmt: Function): T;
   visitIfStmt(stmt: If): T;
   visitPrintStmt(stmt: Print): T;
-  // visitReturnStmt(stmt: Return): T;
+  visitReturnStmt(stmt: Return): T;
   visitVarStmt(stmt: Var): T;
   visitWhileStmt(stmt: While): T;
 }
@@ -116,3 +116,35 @@ export class Function extends Stmt {
     return visitor.visitFunctionStmt(this);
   }
 }
+
+export class Return extends Stmt {
+  constructor(
+    public readonly keyword: Token,
+    public readonly value: Expr | null
+  ) {
+    super();
+    this.keyword = keyword;
+    this.value = value;
+  }
+
+  accept<T>(visitor: StmtVisitor<T>): T {
+    return visitor.visitReturnStmt(this);
+  }
+}
+
+// export class Class extends Stmt {
+//   constructor(
+//     public readonly name: Token,
+//     public readonly superclass: Variable | null,
+//     public readonly methods: Function[]
+//   ) {
+//     super();
+//     this.name = name;
+//     this.superclass = superclass;
+//     this.methods = methods;
+//   }
+
+//   accept<T>(visitor: StmtVisitor<T>): T {
+//     return visitor.visitClassStmt(this);
+//   }
+// }
