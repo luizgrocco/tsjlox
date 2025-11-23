@@ -3,7 +3,7 @@ import { Token } from "./Token.ts";
 
 export interface StmtVisitor<T> {
   visitBlockStmt(stmt: Block): T;
-  // visitClassStmt(stmt: Class): T;
+  visitClassStmt(stmt: Class): T;
   visitExpressionStmt(stmt: Expression): T;
   visitFunctionStmt(stmt: Function): T;
   visitIfStmt(stmt: If): T;
@@ -132,19 +132,19 @@ export class Return extends Stmt {
   }
 }
 
-// export class Class extends Stmt {
-//   constructor(
-//     public readonly name: Token,
-//     public readonly superclass: Variable | null,
-//     public readonly methods: Function[]
-//   ) {
-//     super();
-//     this.name = name;
-//     this.superclass = superclass;
-//     this.methods = methods;
-//   }
+export class Class extends Stmt {
+  constructor(
+    public readonly name: Token,
+    // public readonly superclass: Variable | null,
+    public readonly methods: Function[]
+  ) {
+    super();
+    this.name = name;
+    // this.superclass = superclass;
+    this.methods = methods;
+  }
 
-//   accept<T>(visitor: StmtVisitor<T>): T {
-//     return visitor.visitClassStmt(this);
-//   }
-// }
+  accept<T>(visitor: StmtVisitor<T>): T {
+    return visitor.visitClassStmt(this);
+  }
+}

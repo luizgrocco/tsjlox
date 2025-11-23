@@ -5,9 +5,11 @@ import {
   Call,
   Expr,
   ExprVisitor,
+  Get,
   Grouping,
   Literal,
   Logical,
+  Set,
   Unary,
   Variable,
 } from "./Expr.ts";
@@ -17,6 +19,7 @@ import { LoxCallable, LoxValue } from "./LoxTypes.ts";
 import { RuntimeError } from "./RuntimeError.ts";
 import {
   Block,
+  Class,
   Expression,
   Function,
   If,
@@ -30,10 +33,13 @@ import {
 import { Token } from "./Token.ts";
 import { TokenType } from "./TokenType.ts";
 import { ReturnThrow } from "./ReturnThrow.ts";
+import { LoxClass } from "./LoxClass.ts";
+import { LoxInstance } from "./LoxInstance.ts";
 
 export class Interpreter implements ExprVisitor<LoxValue>, StmtVisitor<void> {
   readonly globals: Environment = new Environment();
   private environment: Environment = this.globals;
+  private readonly locals: Map<Expr, number> = new Map();
 
   constructor() {
     this.globals.define(
@@ -70,6 +76,18 @@ export class Interpreter implements ExprVisitor<LoxValue>, StmtVisitor<void> {
     return this.evaluate(expr.right);
   }
 
+  public visitSetExpr(expr: Set): LoxValue {
+    const object = this.evaluate(expr.object);
+
+    if (!(object instanceof LoxInstance)) {
+      throw new RuntimeError(expr.name, "Only instances have fields.");
+    }
+
+    const value = this.evaluate(expr.value);
+    object.set(expr.name, value);
+    return value;
+  }
+
   public visitGroupingExpr(expr: Grouping) {
     return this.evaluate(expr.expression);
   }
@@ -90,7 +108,16 @@ export class Interpreter implements ExprVisitor<LoxValue>, StmtVisitor<void> {
   }
 
   public visitVariableExpr(expr: Variable): LoxValue {
-    return this.environment.get(expr.name);
+    return this.lookUpVariable(expr.name, expr);
+  }
+
+  private lookUpVariable(name: Token, expr: Expr): LoxValue {
+    const distance = this.locals.get(expr);
+    if (distance != null) {
+      return this.environment.getAt(distance, name.lexeme);
+    } else {
+      return this.globals.get(name);
+    }
   }
 
   private checkNumberOperand(
@@ -126,6 +153,10 @@ export class Interpreter implements ExprVisitor<LoxValue>, StmtVisitor<void> {
     stmt.accept(this);
   }
 
+  resolve(expr: Expr, depth: number): void {
+    this.locals.set(expr, depth);
+  }
+
   executeBlock(statements: Stmt[], environment: Environment): void {
     const previous = this.environment;
     try {
@@ -141,6 +172,12 @@ export class Interpreter implements ExprVisitor<LoxValue>, StmtVisitor<void> {
 
   public visitBlockStmt(stmt: Block): void {
     this.executeBlock(stmt.statements, new Environment(this.environment));
+  }
+
+  visitClassStmt(stmt: Class): void {
+    this.environment.define(stmt.name.lexeme, null);
+    const klass = new LoxClass(stmt.name.lexeme);
+    this.environment.assign(stmt.name, klass);
   }
 
   public visitExpressionStmt(stmt: Expression): void {
@@ -186,7 +223,14 @@ export class Interpreter implements ExprVisitor<LoxValue>, StmtVisitor<void> {
 
   public visitAssignExpr(expr: Assign): LoxValue {
     const value = this.evaluate(expr.value);
-    this.environment.assign(expr.name, value);
+
+    const distance = this.locals.get(expr);
+    if (distance != null) {
+      this.environment.assignAt(distance, expr.name, value);
+    } else {
+      this.globals.assign(expr.name, value);
+    }
+
     return value;
   }
 
@@ -254,8 +298,6 @@ export class Interpreter implements ExprVisitor<LoxValue>, StmtVisitor<void> {
       args.push(this.evaluate(arg));
     }
 
-    // console.dir(callee, { depth: null });
-
     if (!(callee instanceof LoxCallable)) {
       throw new RuntimeError(
         expr.paren,
@@ -273,6 +315,15 @@ export class Interpreter implements ExprVisitor<LoxValue>, StmtVisitor<void> {
     }
 
     return func.call(this, args);
+  }
+
+  public visitGetExpr(expr: Get): LoxValue {
+    const object = this.evaluate(expr.object);
+    if (object instanceof LoxInstance) {
+      return object.get(expr.name);
+    }
+
+    throw new RuntimeError(expr.name, "Only instances have properties.");
   }
 
   interpret(statements: Stmt[]): void {

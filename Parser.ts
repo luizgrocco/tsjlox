@@ -8,10 +8,13 @@ import {
   Variable,
   Logical,
   Call,
+  Get,
+  Set,
 } from "./Expr.ts";
 import { Lox } from "./Lox.ts";
 import {
   Block,
+  Class,
   Expression,
   Function,
   If,
@@ -51,6 +54,7 @@ export class Parser {
 
   private declaration(): Stmt | undefined {
     try {
+      if (this.match(TokenType.CLASS)) return this.classDeclaration();
       if (this.match(TokenType.FUN)) return this.func("function");
       if (this.match(TokenType.VAR)) return this.varDeclaration();
 
@@ -63,6 +67,20 @@ export class Parser {
         throw error;
       }
     }
+  }
+
+  private classDeclaration(): Class {
+    const name = this.consume(TokenType.IDENTIFIER, "Expect class name.");
+    this.consume(TokenType.LEFT_BRACE, "Expect '{' before class body.");
+
+    const methods: Function[] = [];
+    while (!this.check(TokenType.RIGHT_BRACE) && !this.isAtEnd()) {
+      methods.push(this.func("method"));
+    }
+
+    this.consume(TokenType.RIGHT_BRACE, "Expect '}' after class body.");
+
+    return new Class(name, methods);
   }
 
   private statement(): Stmt {
@@ -207,6 +225,9 @@ export class Parser {
       if (expr instanceof Variable) {
         const name = expr.name;
         return new Assign(name, value);
+      } else if (expr instanceof Get) {
+        const get = expr;
+        return new Set(get.object, get.name, value);
       }
 
       this.error(equals, "Invalid assignment target.");
@@ -329,6 +350,12 @@ export class Parser {
     while (true) {
       if (this.match(TokenType.LEFT_PAREN)) {
         expr = this.finishCall(expr);
+      } else if (this.match(TokenType.DOT)) {
+        const name = this.consume(
+          TokenType.IDENTIFIER,
+          "Expect property name after '.'."
+        );
+        expr = new Get(expr, name);
       } else {
         break;
       }

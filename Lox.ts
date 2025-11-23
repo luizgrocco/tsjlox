@@ -1,5 +1,6 @@
 import { Interpreter } from "./Interpreter.ts";
 import { Parser } from "./Parser.ts";
+import { Resolver } from "./Resolver.ts";
 import { RuntimeError } from "./RuntimeError.ts";
 import { Scanner } from "./Scanner.ts";
 import { Token } from "./Token.ts";
@@ -44,6 +45,8 @@ export class Lox {
     const tokens = scanner.scanTokens();
     const parser = new Parser(tokens);
     const statements = parser.parse();
+    const resolver = new Resolver(Lox.interpreter);
+    resolver.resolve(statements);
 
     if (Lox.hadError) return;
 

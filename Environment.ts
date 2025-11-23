@@ -14,6 +14,24 @@ export class Environment {
     this.values.set(name, value);
   }
 
+  ancestor(distance: number): Environment {
+    let environment;
+    environment = this;
+    for (let i = 0; i < distance; i++) {
+      environment = environment.enclosing!;
+    }
+
+    return environment;
+  }
+
+  getAt(distance: number, name: string): LoxValue {
+    return this.ancestor(distance).values.get(name)!;
+  }
+
+  assignAt(distance: number, name: Token, value: LoxValue): void {
+    this.ancestor(distance).values.set(name.lexeme, value);
+  }
+
   get(name: Token): LoxValue {
     if (this.values.has(name.lexeme)) {
       return this.values.get(name.lexeme)!;
