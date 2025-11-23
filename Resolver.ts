@@ -194,15 +194,16 @@ export class Resolver implements ExprVisitor<void>, StmtVisitor<void> {
   private declare(name: Token): void {
     if (this.scopes.length === 0) return;
 
+    if (this.scopes[this.scopes.length - 1].has(name.lexeme)) {
+      Lox.error(name, "Already a variable with this name in this scope.");
+      Deno.exit();
+    }
+
     this.scopes[this.scopes.length - 1].set(name.lexeme, false);
   }
 
   private define(name: Token): void {
     if (this.scopes.length === 0) return;
-
-    if (this.scopes[this.scopes.length - 1].has(name.lexeme)) {
-      Lox.error(name, "Already a variable with this name in this scope.");
-    }
 
     this.scopes[this.scopes.length - 1].set(name.lexeme, true);
   }

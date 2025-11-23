@@ -45,9 +45,14 @@ export class Lox {
     const tokens = scanner.scanTokens();
     const parser = new Parser(tokens);
     const statements = parser.parse();
+
+    // Stop if there was a syntax error.
+    if (Lox.hadError) return;
+
     const resolver = new Resolver(Lox.interpreter);
     resolver.resolve(statements);
 
+    // Stop if there was a resolution error.
     if (Lox.hadError) return;
 
     Lox.interpreter.interpret(statements);
