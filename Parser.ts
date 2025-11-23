@@ -10,6 +10,7 @@ import {
   Call,
   Get,
   Set,
+  This,
 } from "./Expr.ts";
 import { Lox } from "./Lox.ts";
 import {
@@ -372,6 +373,8 @@ export class Parser {
     if (this.match(TokenType.NUMBER, TokenType.STRING)) {
       return new Literal(this.previous().literal);
     }
+
+    if (this.match(TokenType.THIS)) return new This(this.previous());
 
     if (this.match(TokenType.IDENTIFIER)) {
       return new Variable(this.previous());

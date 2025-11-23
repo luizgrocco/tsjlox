@@ -11,6 +11,7 @@ import {
   Unary,
   Get,
   Set,
+  This,
 } from "./Expr.ts";
 import { Interpreter } from "./Interpreter.ts";
 import {
@@ -32,14 +33,24 @@ import { Lox } from "./Lox.ts";
 const FunctionType = {
   NONE: "NONE",
   FUNCTION: "FUNCTION",
+  INITIALIZER: "INITIALIZER",
+  METHOD: "METHOD",
 } as const;
 
 type FunctionType = (typeof FunctionType)[keyof typeof FunctionType];
+
+const ClassType = {
+  NONE: "NONE",
+  CLASS: "CLASS",
+} as const;
+
+type ClassType = (typeof ClassType)[keyof typeof ClassType];
 
 export class Resolver implements ExprVisitor<void>, StmtVisitor<void> {
   private readonly interpreter: Interpreter;
   private readonly scopes: Map<string, boolean>[] = [];
   private currentFunction: FunctionType = FunctionType.NONE;
+  private currentClass: ClassType = ClassType.NONE;
 
   constructor(interpreter: Interpreter) {
     this.interpreter = interpreter;
@@ -52,8 +63,25 @@ export class Resolver implements ExprVisitor<void>, StmtVisitor<void> {
   }
 
   visitClassStmt(stmt: Class): void {
+    const enclosingClass = this.currentClass;
+    this.currentClass = ClassType.CLASS;
+
     this.declare(stmt.name);
     this.define(stmt.name);
+
+    this.beginScope();
+    this.scopes[this.scopes.length - 1].set("this", true);
+
+    for (const method of stmt.methods) {
+      let declaration: FunctionType = FunctionType.METHOD;
+      if (method.name.lexeme === "init") {
+        declaration = FunctionType.INITIALIZER;
+      }
+      this.resolveFunction(method, declaration);
+    }
+
+    this.currentClass = enclosingClass;
+    this.endScope();
   }
 
   visitExpressionStmt(stmt: Expression): void {
@@ -83,6 +111,10 @@ export class Resolver implements ExprVisitor<void>, StmtVisitor<void> {
     }
 
     if (stmt.value !== null) {
+      if (this.currentFunction == FunctionType.INITIALIZER) {
+        Lox.error(stmt.keyword, "Can't return a value from an initializer.");
+      }
+
       this.resolve(stmt.value);
     }
   }
@@ -136,6 +168,15 @@ export class Resolver implements ExprVisitor<void>, StmtVisitor<void> {
   visitSetExpr(expr: Set): void {
     this.resolve(expr.value);
     this.resolve(expr.object);
+  }
+
+  visitThisExpr(expr: This): void {
+    if (this.currentClass === ClassType.NONE) {
+      Lox.error(expr.keyword, "Can't use 'this' outside of a class.");
+      return;
+    }
+
+    this.resolveLocal(expr, expr.keyword);
   }
 
   visitUnaryExpr(expr: Unary): void {

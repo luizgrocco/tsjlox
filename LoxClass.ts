@@ -1,22 +1,40 @@
 import { Interpreter } from "./Interpreter.ts";
+import { LoxFunction } from "./LoxFunction.ts";
 import { LoxInstance } from "./LoxInstance.ts";
 import { LoxCallable, LoxValue } from "./LoxTypes.ts";
 
 export class LoxClass extends LoxCallable {
   public name: string;
+  private readonly methods: Map<string, LoxFunction> = new Map();
 
-  constructor(name: string) {
+  constructor(name: string, methods: Map<string, LoxFunction>) {
     super();
     this.name = name;
+    this.methods = methods;
   }
 
-  override call(_interpreter: Interpreter, _args: LoxValue[]): LoxInstance {
+  findMethod(name: string): LoxFunction | null {
+    if (this.methods.has(name)) {
+      return this.methods.get(name)!;
+    }
+
+    return null;
+  }
+
+  override call(interpreter: Interpreter, args: LoxValue[]): LoxInstance {
     const instance = new LoxInstance(this);
+    const initializer = this.findMethod("init");
+    if (initializer != null) {
+      initializer.bind(instance).call(interpreter, args);
+    }
+
     return instance;
   }
 
   arity(): number {
-    return 0;
+    const initializer = this.findMethod("init");
+    if (initializer == null) return 0;
+    return initializer.arity();
   }
 
   override toString(): string {

@@ -10,6 +10,7 @@ import {
   Literal,
   Logical,
   Set,
+  This,
   Unary,
   Variable,
 } from "./Expr.ts";
@@ -86,6 +87,10 @@ export class Interpreter implements ExprVisitor<LoxValue>, StmtVisitor<void> {
     const value = this.evaluate(expr.value);
     object.set(expr.name, value);
     return value;
+  }
+
+  public visitThisExpr(expr: This): LoxValue {
+    return this.lookUpVariable(expr.keyword, expr);
   }
 
   public visitGroupingExpr(expr: Grouping) {
@@ -176,7 +181,19 @@ export class Interpreter implements ExprVisitor<LoxValue>, StmtVisitor<void> {
 
   visitClassStmt(stmt: Class): void {
     this.environment.define(stmt.name.lexeme, null);
-    const klass = new LoxClass(stmt.name.lexeme);
+
+    const methods: Map<string, LoxFunction> = new Map();
+    for (const method of stmt.methods) {
+      const func = new LoxFunction(
+        method,
+        this.environment,
+        method.name.lexeme === "init"
+      );
+      methods.set(method.name.lexeme, func);
+    }
+
+    const klass = new LoxClass(stmt.name.lexeme, methods);
+
     this.environment.assign(stmt.name, klass);
   }
 
@@ -185,7 +202,7 @@ export class Interpreter implements ExprVisitor<LoxValue>, StmtVisitor<void> {
   }
 
   public visitFunctionStmt(stmt: Function): void {
-    const func = new LoxFunction(stmt, this.environment);
+    const func = new LoxFunction(stmt, this.environment, false);
     this.environment.define(stmt.name.lexeme, func);
   }
 

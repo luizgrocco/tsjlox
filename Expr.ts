@@ -11,7 +11,7 @@ export interface ExprVisitor<T> {
   visitLogicalExpr(expr: Logical): T;
   visitSetExpr(expr: Set): T;
   // visitSuperExpr(expr: SuperExpr): T;
-  // visitThisExpr(expr: ThisExpr): T;
+  visitThisExpr(expr: This): T;
   visitUnaryExpr(expr: Unary): T;
   visitVariableExpr(expr: Variable): T;
 }
@@ -114,15 +114,15 @@ export class Set extends Expr {
 //   }
 // }
 
-// export class ThisExpr extends Expr {
-//   constructor(public keyword: Token) {
-//     super();
-//   }
+export class This extends Expr {
+  constructor(public keyword: Token) {
+    super();
+  }
 
-//   accept<T>(visitor: ExprVisitor<T>): T {
-//     return visitor.visitThisExpr(this);
-//   }
-// }
+  accept<T>(visitor: ExprVisitor<T>): T {
+    return visitor.visitThisExpr(this);
+  }
+}
 
 export class Unary extends Expr {
   constructor(public readonly operator: Token, public readonly right: Expr) {
