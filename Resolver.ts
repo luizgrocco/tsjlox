@@ -12,6 +12,7 @@ import {
   Get,
   Set,
   This,
+  Super,
 } from "./Expr.ts";
 import { Interpreter } from "./Interpreter.ts";
 import {
@@ -42,6 +43,7 @@ type FunctionType = (typeof FunctionType)[keyof typeof FunctionType];
 const ClassType = {
   NONE: "NONE",
   CLASS: "CLASS",
+  SUBCLASS: "SUBCLASS",
 } as const;
 
 type ClassType = (typeof ClassType)[keyof typeof ClassType];
@@ -69,6 +71,23 @@ export class Resolver implements ExprVisitor<void>, StmtVisitor<void> {
     this.declare(stmt.name);
     this.define(stmt.name);
 
+    if (
+      stmt.superclass !== null &&
+      stmt.name.lexeme === stmt.superclass.name.lexeme
+    ) {
+      Lox.error(stmt.superclass.name, "A class can't inherit from itself.");
+    }
+
+    if (stmt.superclass !== null) {
+      this.currentClass = ClassType.SUBCLASS;
+      this.resolve(stmt.superclass);
+    }
+
+    if (stmt.superclass !== null) {
+      this.beginScope();
+      this.scopes[this.scopes.length - 1].set("super", true);
+    }
+
     this.beginScope();
     this.scopes[this.scopes.length - 1].set("this", true);
 
@@ -79,6 +98,8 @@ export class Resolver implements ExprVisitor<void>, StmtVisitor<void> {
       }
       this.resolveFunction(method, declaration);
     }
+
+    if (stmt.superclass !== null) this.endScope();
 
     this.currentClass = enclosingClass;
     this.endScope();
@@ -168,6 +189,19 @@ export class Resolver implements ExprVisitor<void>, StmtVisitor<void> {
   visitSetExpr(expr: Set): void {
     this.resolve(expr.value);
     this.resolve(expr.object);
+  }
+
+  visitSuperExpr(expr: Super): void {
+    if (this.currentClass === ClassType.NONE) {
+      Lox.error(expr.keyword, "Can't use 'super' outside of a class.");
+    } else if (this.currentClass !== ClassType.SUBCLASS) {
+      Lox.error(
+        expr.keyword,
+        "Can't use 'super' in a class with no superclass."
+      );
+    }
+
+    this.resolveLocal(expr, expr.keyword);
   }
 
   visitThisExpr(expr: This): void {

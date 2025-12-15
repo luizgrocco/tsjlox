@@ -4,11 +4,17 @@ import { LoxInstance } from "./LoxInstance.ts";
 import { LoxCallable, LoxValue } from "./LoxTypes.ts";
 
 export class LoxClass extends LoxCallable {
-  public name: string;
+  public readonly name: string;
+  public readonly superclass: LoxClass | null;
   private readonly methods: Map<string, LoxFunction> = new Map();
 
-  constructor(name: string, methods: Map<string, LoxFunction>) {
+  constructor(
+    name: string,
+    superclass: LoxClass | null,
+    methods: Map<string, LoxFunction>
+  ) {
     super();
+    this.superclass = superclass;
     this.name = name;
     this.methods = methods;
   }
@@ -16,6 +22,10 @@ export class LoxClass extends LoxCallable {
   findMethod(name: string): LoxFunction | null {
     if (this.methods.has(name)) {
       return this.methods.get(name)!;
+    }
+
+    if (this.superclass !== null) {
+      return this.superclass.findMethod(name);
     }
 
     return null;

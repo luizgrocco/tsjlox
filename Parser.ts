@@ -11,6 +11,7 @@ import {
   Get,
   Set,
   This,
+  Super,
 } from "./Expr.ts";
 import { Lox } from "./Lox.ts";
 import {
@@ -72,6 +73,13 @@ export class Parser {
 
   private classDeclaration(): Class {
     const name = this.consume(TokenType.IDENTIFIER, "Expect class name.");
+
+    let superclass = null;
+    if (this.match(TokenType.LESS)) {
+      this.consume(TokenType.IDENTIFIER, "Expect superclass name.");
+      superclass = new Variable(this.previous());
+    }
+
     this.consume(TokenType.LEFT_BRACE, "Expect '{' before class body.");
 
     const methods: Function[] = [];
@@ -81,7 +89,7 @@ export class Parser {
 
     this.consume(TokenType.RIGHT_BRACE, "Expect '}' after class body.");
 
-    return new Class(name, methods);
+    return new Class(name, superclass, methods);
   }
 
   private statement(): Stmt {
@@ -372,6 +380,18 @@ export class Parser {
 
     if (this.match(TokenType.NUMBER, TokenType.STRING)) {
       return new Literal(this.previous().literal);
+    }
+
+    if (this.match(TokenType.SUPER)) {
+      const keyword = this.previous();
+      this.consume(TokenType.DOT, "Expect '.' after 'super'.");
+
+      const method = this.consume(
+        TokenType.IDENTIFIER,
+        "Expect superclass method name."
+      );
+
+      return new Super(keyword, method);
     }
 
     if (this.match(TokenType.THIS)) return new This(this.previous());

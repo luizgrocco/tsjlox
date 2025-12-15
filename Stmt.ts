@@ -1,4 +1,4 @@
-import { Expr } from "./Expr.ts";
+import { Expr, Variable } from "./Expr.ts";
 import { Token } from "./Token.ts";
 
 export interface StmtVisitor<T> {
@@ -135,12 +135,12 @@ export class Return extends Stmt {
 export class Class extends Stmt {
   constructor(
     public readonly name: Token,
-    // public readonly superclass: Variable | null,
+    public readonly superclass: Variable | null,
     public readonly methods: Function[]
   ) {
     super();
     this.name = name;
-    // this.superclass = superclass;
+    this.superclass = superclass;
     this.methods = methods;
   }
 
